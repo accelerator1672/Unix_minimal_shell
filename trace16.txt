@@ -1,0 +1,60 @@
+#
+# trace15.txt - Putting it all together
+#
+
+/bin/echo tsh> ./bogus
+./bogus
+
+/bin/echo tsh> ./myspin 10
+./myspin 10
+
+SLEEP 2
+INT
+
+/bin/echo -e tsh> ./myspin 3 \046
+./myspin 3 &
+
+/bin/echo -e tsh> ./myspin 4 \046
+./myspin 4 &
+
+/bin/echo -e tsh> ./mykill 5 \046
+./myspin 5 &
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> fg %1
+fg %1
+
+SLEEP 2
+TSTP
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> bg %4
+bg %4
+
+/bin/echo tsh> kill %3
+kill %3
+
+/bin/echo tsh> bg %1
+bg %1
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> fg %1
+fg %1
+
+/bin/echo tsh> quit
+quit
+
+/bin/echo -e tsh> export TESTENV=ENV
+export TESTENV=ENV
+
+/bin/echo -e tsh> export TESTENV2=ENV2
+export TESTENV2=ENV2
+
+/bin/echo -e tsh> /bin/echo $TESTENV2 $TESTENV
+/bin/echo $TESTENV2 $TESTENV

@@ -1,0 +1,15 @@
+#
+# trace18.txt - Tests built-in command kill
+#
+
+/bin/echo -e tsh> ./mykill 10 \046
+./mykill 10 &
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> kill %1
+kill %1
+
+/bin/echo tsh> jobs
+jobs

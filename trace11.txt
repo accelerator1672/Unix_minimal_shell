@@ -1,0 +1,14 @@
+#
+# trace11.txt - Process export builtin command. 
+#
+/bin/echo -e tsh> export SHLAB=SUCCESS
+export SHLAB=SUCCESS
+
+/bin/echo -e tsh> /bin/echo $SHLAB
+/bin/echo $SHLAB
+
+/bin/echo -e tsh> /usr/bin/env
+/usr/bin/env
+
+
+

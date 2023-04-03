@@ -1,0 +1,28 @@
+#
+# trace13.txt - Restart every stopped process in process group
+#
+/bin/echo -e tsh> ./mysplit 4
+./mysplit 4 
+
+SLEEP 2
+TSTP
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> /bin/ps o pid,tty,stat,time,cmd
+/bin/ps o pid,tty,stat,time,cmd
+
+/bin/echo tsh> fg %1
+fg %1
+
+/bin/echo tsh> /bin/ps o pid,tty,stat,time,cmd
+/bin/ps o pid,tty,stat,time,cmd
+
+/bin/echo -e tsh> export TESTENV=ENV
+export TESTENV=ENV
+
+/bin/echo -e tsh> /bin/echo $NOEXIST $TESTENV
+/bin/echo $NOEXIST $TESTENV
+
+
