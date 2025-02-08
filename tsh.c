@@ -96,9 +96,7 @@ int main(int argc, char **argv)
     /* Redirect stderr to stdout (so that driver will get all output
      * on the pipe connected to stdout) */
     dup2(1, 2);
-   
 
-    
     /* Parse the command line */
     while ((c = getopt(argc, argv, "hvp")) != EOF)
     {
@@ -124,7 +122,7 @@ int main(int argc, char **argv)
     Signal(SIGINT, sigint_handler);   /* ctrl-c */
     Signal(SIGTSTP, sigtstp_handler); /* ctrl-z */
     Signal(SIGCHLD, sigchld_handler); /* Terminated or stopped child */
-    
+
     /* This one provides a clean way to kill the shell */
     Signal(SIGQUIT, sigquit_handler);
 
@@ -172,42 +170,47 @@ void eval(char *cmdline)
 {
     char *argv[MAXARGS];
     char buf[MAXLINE];
-    int bg; 
+    int bg;
     pid_t pid;
-    
+
     sigset_t mask_single, mask_every, mask_prev;
     sigemptyset(&mask_single);
     sigfillset(&mask_every);
-    sigaddset(&mask_single,SIGCHLD);          /*ADD SIGCHLD TO THE CUSTOM MASK*/
+    sigaddset(&mask_single, SIGCHLD); /*ADD SIGCHLD TO THE CUSTOM MASK*/
 
-    strcpy(buf,cmdline);
-    bg = parseline(buf,argv); 
-    if(argv[0] == NULL){
+    strcpy(buf, cmdline);
+    bg = parseline(buf, argv);
+    if (argv[0] == NULL)
+    {
         return;
     }
-    if(!builtin_cmd(argv)){
+    if (!builtin_cmd(argv))
+    {
         sigprocmask(SIG_BLOCK, &mask_single, &mask_prev);
-        if((pid = fork()) == 0){
-            setpgid(0,0);
-            sigprocmask(SIG_SETMASK, &mask_prev,NULL);
-            if(execve(argv[0],argv,environ)<0){
+        if ((pid = fork()) == 0)
+        {
+            setpgid(0, 0);
+            sigprocmask(SIG_SETMASK, &mask_prev, NULL);
+            if (execve(argv[0], argv, environ) < 0)
+            {
                 printf("%s: Command not found\n", argv[0]);
-                deletejob(jobs,getpgid(pid));
+                deletejob(jobs, getpgid(pid));
                 exit(0);
             }
         }
-        if(!bg){
-            sigprocmask(SIG_BLOCK, &mask_every, NULL);               /*make sure that job is added to the list before it's deleted*/
-            addjob(jobs,pid,FG,cmdline);
-            sigprocmask(SIG_SETMASK, &mask_prev, NULL);             /*unblock the signals*/
-            waitfg(pid);                                            /*wait until foreground process terminates or receives interrupt*/
-           
-        }else{
+        if (!bg)
+        {
+            sigprocmask(SIG_BLOCK, &mask_every, NULL); /*make sure that job is added to the list before it's deleted*/
+            addjob(jobs, pid, FG, cmdline);
+            sigprocmask(SIG_SETMASK, &mask_prev, NULL); /*unblock the signals*/
+            waitfg(pid);                                /*wait until foreground process terminates or receives interrupt*/
+        }
+        else
+        {
             sigprocmask(SIG_BLOCK, &mask_every, NULL);
-            addjob(jobs,pid,BG,cmdline);
+            addjob(jobs, pid, BG, cmdline);
             sigprocmask(SIG_SETMASK, &mask_prev, NULL);
-            printf("[%d] (%d) %s",pid2jid(pid), pid, cmdline);
-            
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
         }
     }
     return;
@@ -226,7 +229,7 @@ int parseline(const char *cmdline, char **argv)
     char *buf = array;          /* ptr that traverses command line */
     char *delim;                /* points to first space delimiter */
     int argc;                   /* number of args */
-    int bg;             /* background job? */
+    int bg;                     /* background job? */
 
     strcpy(buf, cmdline);
     buf[strlen(buf) - 1] = ' ';   /* replace trailing '\n' with space */
@@ -249,16 +252,19 @@ int parseline(const char *cmdline, char **argv)
     {
         if (*buf == '$')
         {
-            buf++;                     
+            buf++;
             static char arr[100];
             char *ptr = arr;
-            strcpy(ptr, buf);                                           /*copy to temporary var*/
-            ptr = strtok(ptr," ");                                      /*remove empty spaces*/
-            if(getenv(ptr)){                                            /*check if registered env variable*/
-                buf = strtok(buf, " ");                                 
-                buf = getenv(buf);                                      /* if valid replace the variable name with its value*/
-            }else{
-                buf+= (strlen(ptr)+1);                                              /*else check next one*/
+            strcpy(ptr, buf);       /*copy to temporary var*/
+            ptr = strtok(ptr, " "); /*remove empty spaces*/
+            if (getenv(ptr))
+            { /*check if registered env variable*/
+                buf = strtok(buf, " ");
+                buf = getenv(buf); /* if valid replace the variable name with its value*/
+            }
+            else
+            {
+                buf += (strlen(ptr) + 1); /*else check next one*/
                 argv[argc] = buf;
             }
         }
@@ -300,18 +306,22 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv)
 {
-    if(!strcmp(argv[0], "quit")){
+    if (!strcmp(argv[0], "quit"))
+    {
         exit(0);
     }
-    if(!strcmp(argv[0], "jobs")){
+    if (!strcmp(argv[0], "jobs"))
+    {
         listjobs(jobs);
         return 1;
     }
-    if(!strcmp(argv[0], "bg") || !strcmp(argv[0],"fg") || !strcmp(argv[0], "kill")){
+    if (!strcmp(argv[0], "bg") || !strcmp(argv[0], "fg") || !strcmp(argv[0], "kill"))
+    {
         do_bgfgkl(argv);
         return 1;
     }
-    if(!strcmp(argv[0], "export")){
+    if (!strcmp(argv[0], "export"))
+    {
         do_export(argv);
         return 1;
     }
@@ -323,69 +333,87 @@ int builtin_cmd(char **argv)
  */
 void do_bgfgkl(char **argv)
 {
-   if(!strcmp(argv[0], "bg")){
-        if(!argv[1]){
+    if (!strcmp(argv[0], "bg"))
+    {
+        if (!argv[1])
+        {
             printf("bg command requires PID or %%jobid argument\n");
-       }
-       else if(!(atoi(argv[1]+1))){
+        }
+        else if (!(atoi(argv[1] + 1)))
+        {
             printf("bg: argument must be a PID or %%jobid\n");
-       }
-       else if(argv[1][0] != '%'){
-            printf("(%s): No such process\n",argv[1]);
-       }
-       else{
-            struct job_t *ptr = getjobjid(jobs,atoi(++argv[1]));
-            if (ptr != NULL){                   /*Check if the jobid exists*/
+        }
+        else if (argv[1][0] != '%')
+        {
+            printf("(%s): No such process\n", argv[1]);
+        }
+        else
+        {
+            struct job_t *ptr = getjobjid(jobs, atoi(++argv[1]));
+            if (ptr != NULL)
+            { /*Check if the jobid exists*/
 
-                pid_t pid = ptr -> pid;
+                pid_t pid = ptr->pid;
                 int jid = ptr->jid;
                 char *cmdline = ptr->cmdline;
-                ptr-> state = BG;                      /*Set the state of the process to bg*/
-                kill(pid,SIGCONT);                     /*Send signal to continue*/                  
+                ptr->state = BG;    /*Set the state of the process to bg*/
+                kill(pid, SIGCONT); /*Send signal to continue*/
 
                 printf("[%d] (%d) %s", jid, pid, cmdline);
             }
-            else{
-                  printf("%%%s: No such job\n",argv[1]);
+            else
+            {
+                printf("%%%s: No such job\n", argv[1]);
             }
         }
-   }
-   else if(!strcmp(argv[0], "fg")){
-       if(!argv[1]){
+    }
+    else if (!strcmp(argv[0], "fg"))
+    {
+        if (!argv[1])
+        {
             printf("fg command requires PID or %%jobid argument\n");
-       }
-       else if(!(atoi(argv[1]+1))){
-            printf("fg: argument must be a PID or %%jobid\n");
-       }
-       else if(argv[1][0] != '%'){
-            printf("(%s): No such process\n",argv[1]);
-       }
-       else{
-            struct job_t *ptr = getjobjid(jobs,atoi(++argv[1]));
-            if (ptr != NULL){
-
-                    pid_t pid = ptr -> pid;
-                    killpg(pid, SIGCONT);
-                    ptr->state = FG;
-                    waitfg(pid);
-                    
-            }else{
-                printf("%%%s: No such job\n",argv[1]);
-            }
-       }
-   }
-   else{
-        struct job_t *ptr = getjobjid(jobs,atoi(++argv[1]));
-        if (ptr != NULL){
-
-            pid_t pid = ptr -> pid;
-            kill(pid,SIGKILL);
-            deletejob(jobs,pid);
-
         }
-        else{printf("%s: No such job\n",argv[1]);}
-   }
-   
+        else if (!(atoi(argv[1] + 1)))
+        {
+            printf("fg: argument must be a PID or %%jobid\n");
+        }
+        else if (argv[1][0] != '%')
+        {
+            printf("(%s): No such process\n", argv[1]);
+        }
+        else
+        {
+            struct job_t *ptr = getjobjid(jobs, atoi(++argv[1]));
+            if (ptr != NULL)
+            {
+
+                pid_t pid = ptr->pid;
+                killpg(pid, SIGCONT);
+                ptr->state = FG;
+                waitfg(pid);
+            }
+            else
+            {
+                printf("%%%s: No such job\n", argv[1]);
+            }
+        }
+    }
+    else
+    {
+        struct job_t *ptr = getjobjid(jobs, atoi(++argv[1]));
+        if (ptr != NULL)
+        {
+
+            pid_t pid = ptr->pid;
+            kill(pid, SIGKILL);
+            deletejob(jobs, pid);
+        }
+        else
+        {
+            printf("%s: No such job\n", argv[1]);
+        }
+    }
+
     return;
 }
 
@@ -396,12 +424,12 @@ void do_bgfgkl(char **argv)
 void do_export(char **argv)
 {
 
-    char *ptr1, *ptr2;         /*To export the environment prepare 2 string args*/
-    char hold_env[100];             /*prepare character buffer array to copy argv*/
-    strcpy(hold_env,argv[1]);       
-    ptr1 = strtok(hold_env,"=");    /*tokenize the string into 2 arguments using '=' */
+    char *ptr1, *ptr2;  /*To export the environment prepare 2 string args*/
+    char hold_env[100]; /*prepare character buffer array to copy argv*/
+    strcpy(hold_env, argv[1]);
+    ptr1 = strtok(hold_env, "="); /*tokenize the string into 2 arguments using '=' */
     ptr2 = strtok(NULL, "=");
-    setenv(ptr1,ptr2,1);            /*export the environment variable with its value*/
+    setenv(ptr1, ptr2, 1); /*export the environment variable with its value*/
     return;
 }
 
@@ -410,15 +438,12 @@ void do_export(char **argv)
  */
 void waitfg(pid_t pid)
 {
-   struct job_t *ptr = getjobpid(jobs,pid);     /*sleep until the state of the FG process changes*/
-   while((ptr->state==FG) && ptr!=NULL){        /*check everytime whether the state has changed and is unterminated*/
+    struct job_t *ptr = getjobpid(jobs, pid); /*sleep until the state of the FG process changes*/
+    while ((ptr->state == FG) && ptr != NULL)
+    { /*check everytime whether the state has changed and is unterminated*/
         sleep(1);
-   }
-   return;
-
-    
-
-
+    }
+    return;
 }
 
 /*****************
@@ -436,29 +461,38 @@ void sigchld_handler(int sig)
 {
     int status;
     pid_t pid;
-    if((pid = waitpid(-1, &status, WNOHANG|WUNTRACED))<0){
+    if ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) < 0)
+    {
         unix_error("pid_error");
     }
-    else{
-        if (pid){                                               /*if nonzero pid is returned*/
-            if(WIFEXITED(status)){
+    else
+    {
+        if (pid)
+        { /*if nonzero pid is returned*/
+            if (WIFEXITED(status))
+            {
                 deletejob(jobs, pid);
             }
-            else if(WIFSIGNALED(status)){
-                if(WTERMSIG(status)== 2){
+            else if (WIFSIGNALED(status))
+            {
+                if (WTERMSIG(status) == 2)
+                {
                     printf("Job [%d] (%d) terminated by signal 2\n", pid2jid(pid), pid);
-                    deletejob(jobs,pid);
+                    deletejob(jobs, pid);
                 }
             }
-            else{
-                if(WIFSTOPPED(status)){
-                     struct job_t *ptr = getjobpid(jobs, pid);
-                     ptr ->state = ST;
-                     printf("Job [%d] (%d) stopped by signal 20\n", pid2jid(pid), pid);
+            else
+            {
+                if (WIFSTOPPED(status))
+                {
+                    struct job_t *ptr = getjobpid(jobs, pid);
+                    ptr->state = ST;
+                    printf("Job [%d] (%d) stopped by signal 20\n", pid2jid(pid), pid);
                 }
             }
         }
-        else{
+        else
+        {
             return;
         }
     }
@@ -474,8 +508,9 @@ void sigint_handler(int sig)
     pid_t pid = fgpid(jobs);
     pid = getpgid(pid);
 
-    if(pid){
-        killpg(pid,sig);
+    if (pid)
+    {
+        killpg(pid, sig);
     }
     return;
 }
@@ -488,8 +523,9 @@ void sigint_handler(int sig)
 void sigtstp_handler(int sig)
 {
     pid_t pid = fgpid(jobs);
-    if(pid){
-        killpg(pid,sig);
+    if (pid)
+    {
+        killpg(pid, sig);
     }
     return;
 }
